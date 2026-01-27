@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { supabase } from './supabase'
 import type { User } from '@supabase/supabase-js'
+import type { WeatherData } from './utils/weather'
 
 export interface Catch {
   id: string
@@ -18,6 +19,14 @@ export interface Catch {
   }
   user_id?: string
   created_at?: string
+  
+  // Weather data
+  weather?: WeatherData
+  
+  // Social features
+  is_public?: boolean
+  likes_count?: number
+  comments_count?: number
 }
 
 interface CatchStore {
@@ -138,7 +147,11 @@ export const useCatchStore = create<CatchStore>((set, get) => ({
     const updateData = {
       ...catchData,
       date: catchData.date instanceof Date ? catchData.date.toISOString() : catchData.date,
+      photo_url: catchData.photo,
     }
+
+    // Remove photo field for database
+    delete (updateData as any).photo
 
     const { error } = await supabase
       .from('catches')

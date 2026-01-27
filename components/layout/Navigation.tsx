@@ -9,6 +9,9 @@ const navigation = [
   { name: 'Fänge', href: '/catches', icon: '🎣' },
   { name: 'Karte', href: '/map', icon: '🗺️' },
   { name: 'Statistiken', href: '/stats', icon: '📊' },
+  { name: 'Social', href: '/social', icon: '👥' },
+  { name: 'Bestenliste', href: '/leaderboard', icon: '🏆' },
+  { name: 'Freunde', href: '/friends', icon: '🤝' },
   { name: 'Profil', href: '/profile', icon: '👤' },
 ]
 

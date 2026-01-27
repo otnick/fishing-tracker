@@ -120,6 +120,42 @@ export default function StatsPage() {
       .slice(0, 8)
   }, [catches])
 
+  // Weather Statistics
+  const weatherStats = useMemo(() => {
+    const catchesWithWeather = catches.filter(c => c.weather)
+    
+    if (catchesWithWeather.length === 0) return null
+
+    // By Temperature Range
+    const tempRanges = new Map<string, number>()
+    catchesWithWeather.forEach(c => {
+      const temp = c.weather!.temperature
+      const range = temp < 10 ? '<10°C' : temp < 15 ? '10-15°C' : temp < 20 ? '15-20°C' : temp < 25 ? '20-25°C' : '25°C+'
+      tempRanges.set(range, (tempRanges.get(range) || 0) + 1)
+    })
+
+    // By Weather Type
+    const weatherTypes = new Map<string, number>()
+    catchesWithWeather.forEach(c => {
+      const desc = c.weather!.description
+      weatherTypes.set(desc, (weatherTypes.get(desc) || 0) + 1)
+    })
+
+    return {
+      byTemp: Array.from(tempRanges.entries())
+        .map(([range, count]) => ({ bereich: range, fänge: count }))
+        .sort((a, b) => b.fänge - a.fänge),
+      byType: Array.from(weatherTypes.entries())
+        .map(([type, count]) => ({ wetter: type, fänge: count }))
+        .sort((a, b) => b.fänge - a.fänge)
+        .slice(0, 5),
+      avgTemp: Math.round(
+        catchesWithWeather.reduce((sum, c) => sum + c.weather!.temperature, 0) / catchesWithWeather.length
+      ),
+      bestTemp: Array.from(tempRanges.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] || '-',
+    }
+  }, [catches])
+
   if (catches.length === 0) {
     return (
       <div className="space-y-6">
@@ -292,6 +328,70 @@ export default function StatsPage() {
               </BarChart>
             </ResponsiveContainer>
           </div>
+        )}
+
+        {/* Weather Statistics */}
+        {weatherStats && (
+          <>
+            {/* Weather Insight Card */}
+            <div className="bg-ocean/30 backdrop-blur-sm rounded-xl p-6 lg:col-span-2">
+              <h2 className="text-lg font-bold text-white mb-4">🌤️ Wetter-Einblicke</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <div className="text-ocean-light text-sm">Ø Temperatur</div>
+                  <div className="text-2xl font-bold text-white">{weatherStats.avgTemp}°C</div>
+                </div>
+                <div>
+                  <div className="text-ocean-light text-sm">Beste Temp</div>
+                  <div className="text-2xl font-bold text-white">{weatherStats.bestTemp}</div>
+                </div>
+                <div>
+                  <div className="text-ocean-light text-sm">Mit Wetter</div>
+                  <div className="text-2xl font-bold text-white">
+                    {catches.filter(c => c.weather).length}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-ocean-light text-sm">Erfasst</div>
+                  <div className="text-2xl font-bold text-white">
+                    {Math.round((catches.filter(c => c.weather).length / catches.length) * 100)}%
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Catches by Temperature */}
+            <div className="bg-ocean/30 backdrop-blur-sm rounded-xl p-6">
+              <h2 className="text-lg font-bold text-white mb-4">Fänge nach Temperatur</h2>
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={weatherStats.byTemp}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#2c5f8d" />
+                  <XAxis dataKey="bereich" stroke="#4a90e2" />
+                  <YAxis stroke="#4a90e2" />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#1a3a52', border: 'none', borderRadius: '8px' }}
+                  />
+                  <Bar dataKey="fänge" fill="#d4af37" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Catches by Weather Type */}
+            <div className="bg-ocean/30 backdrop-blur-sm rounded-xl p-6">
+              <h2 className="text-lg font-bold text-white mb-4">Fänge nach Wetter</h2>
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={weatherStats.byType}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#2c5f8d" />
+                  <XAxis dataKey="wetter" stroke="#4a90e2" />
+                  <YAxis stroke="#4a90e2" />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#1a3a52', border: 'none', borderRadius: '8px' }}
+                  />
+                  <Bar dataKey="fänge" fill="#4a7c59" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </>
         )}
       </div>
     </div>

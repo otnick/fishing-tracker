@@ -1,0 +1,32 @@
+{
+  "name": "FishBox - Angel Tracker",
+  "short_name": "FishBox",
+  "description": "Deine Angel-Sammlung in 3D mit GPS, Wetter und Social Features",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f2333",
+  "theme_color": "#2c5f8d",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["sports", "lifestyle", "social"],
+  "screenshots": [
+    {
+      "src": "/screenshot-1.png",
+      "sizes": "1080x1920",
+      "type": "image/png"
+    }
+  ]
+}

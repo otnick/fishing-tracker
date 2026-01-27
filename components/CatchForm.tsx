@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useCatchStore } from '@/lib/store'
 import { uploadPhoto, compressImage } from '@/lib/utils/photoUpload'
 import { getCurrentPosition, getLocationName, formatCoordinates } from '@/lib/utils/geolocation'
+import { getCurrentWeather } from '@/lib/utils/weather'
 import type { Coordinates } from '@/lib/utils/geolocation'
 
 interface CatchFormProps {
@@ -44,6 +45,8 @@ export default function CatchForm({ onSuccess }: CatchFormProps) {
   const [coordinates, setCoordinates] = useState<Coordinates | null>(null)
   const [gettingLocation, setGettingLocation] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [weather, setWeather] = useState<any>(null)
+  const [fetchingWeather, setFetchingWeather] = useState(false)
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -76,6 +79,14 @@ export default function CatchForm({ onSuccess }: CatchFormProps) {
       if (locationName && !formData.location) {
         setFormData({ ...formData, location: locationName })
       }
+
+      // Auto-fetch weather for current location
+      setFetchingWeather(true)
+      const weatherData = await getCurrentWeather(coords)
+      if (weatherData) {
+        setWeather(weatherData)
+      }
+      setFetchingWeather(false)
     } else {
       alert('GPS-Position konnte nicht ermittelt werden. Bitte erlaube Standortzugriff.')
     }
@@ -85,6 +96,7 @@ export default function CatchForm({ onSuccess }: CatchFormProps) {
 
   const removeGPS = () => {
     setCoordinates(null)
+    setWeather(null)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -124,6 +136,8 @@ export default function CatchForm({ onSuccess }: CatchFormProps) {
         date: new Date(formData.date),
         photo: photoUrl,
         coordinates: coordinates || undefined,
+        weather: weather || undefined,
+        is_public: false, // Default to private
       })
 
       // Reset form

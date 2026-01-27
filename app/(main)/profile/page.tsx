@@ -1,11 +1,41 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useCatchStore } from '@/lib/store'
 import { format } from 'date-fns'
 import { de } from 'date-fns/locale'
+import { 
+  notificationService, 
+  getNotificationPreference, 
+  setNotificationPreference 
+} from '@/lib/utils/notifications'
 
 export default function ProfilePage() {
   const { user, catches, signOut } = useCatchStore()
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false)
+
+  useEffect(() => {
+    setNotificationsEnabled(getNotificationPreference())
+  }, [])
+
+  const toggleNotifications = async () => {
+    if (!notificationsEnabled) {
+      // Request permission
+      const granted = await notificationService.requestPermission()
+      if (granted) {
+        setNotificationPreference(true)
+        setNotificationsEnabled(true)
+        // Send test notification
+        await notificationService.send({
+          title: '🎣 Benachrichtigungen aktiviert!',
+          body: 'Du erhältst jetzt Updates zu Likes, Kommentaren und mehr.',
+        })
+      }
+    } else {
+      setNotificationPreference(false)
+      setNotificationsEnabled(false)
+    }
+  }
 
   const handleExportJSON = () => {
     const data = JSON.stringify(catches, null, 2)
@@ -138,9 +168,22 @@ export default function ProfilePage() {
           <div className="flex items-center justify-between py-3 border-b border-ocean-light/20">
             <div>
               <div className="text-white font-semibold">Benachrichtigungen</div>
-              <div className="text-ocean-light text-sm">Bald verfügbar</div>
+              <div className="text-ocean-light text-sm">
+                Erhalte Updates zu Likes, Kommentaren und Freunden
+              </div>
             </div>
-            <div className="text-ocean-light">Kommt bald</div>
+            <button
+              onClick={toggleNotifications}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                notificationsEnabled ? 'bg-green-500' : 'bg-gray-600'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  notificationsEnabled ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
           </div>
           
           <div className="flex items-center justify-between py-3 border-b border-ocean-light/20">

@@ -1,0 +1,237 @@
+-- Social Features & Weather Data Migration
+-- Run this AFTER the base schema
+
+-- Add weather and social columns to catches table
+ALTER TABLE public.catches 
+ADD COLUMN IF NOT EXISTS weather JSONB,
+ADD COLUMN IF NOT EXISTS is_public BOOLEAN DEFAULT false,
+ADD COLUMN IF NOT EXISTS likes_count INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS comments_count INTEGER DEFAULT 0;
+
+-- Create user profiles table
+CREATE TABLE IF NOT EXISTS public.profiles (
+    id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+    username TEXT UNIQUE,
+    display_name TEXT,
+    bio TEXT,
+    avatar_url TEXT,
+    is_public BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create friendships table
+CREATE TABLE IF NOT EXISTS public.friendships (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    friend_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    status TEXT DEFAULT 'pending', -- pending, accepted, rejected
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id, friend_id)
+);
+
+-- Create likes table
+CREATE TABLE IF NOT EXISTS public.catch_likes (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    catch_id UUID REFERENCES public.catches(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(catch_id, user_id)
+);
+
+-- Create comments table
+CREATE TABLE IF NOT EXISTS public.catch_comments (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    catch_id UUID REFERENCES public.catches(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    comment TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create activity feed table
+CREATE TABLE IF NOT EXISTS public.activities (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    activity_type TEXT NOT NULL, -- catch, like, comment, friend
+    catch_id UUID REFERENCES public.catches(id) ON DELETE CASCADE,
+    target_user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    metadata JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS profiles_username_idx ON public.profiles(username);
+CREATE INDEX IF NOT EXISTS friendships_user_id_idx ON public.friendships(user_id);
+CREATE INDEX IF NOT EXISTS friendships_friend_id_idx ON public.friendships(friend_id);
+CREATE INDEX IF NOT EXISTS catch_likes_catch_id_idx ON public.catch_likes(catch_id);
+CREATE INDEX IF NOT EXISTS catch_likes_user_id_idx ON public.catch_likes(user_id);
+CREATE INDEX IF NOT EXISTS catch_comments_catch_id_idx ON public.catch_comments(catch_id);
+CREATE INDEX IF NOT EXISTS activities_user_id_idx ON public.activities(user_id);
+CREATE INDEX IF NOT EXISTS activities_created_at_idx ON public.activities(created_at DESC);
+
+-- Enable RLS on new tables
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.friendships ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.catch_likes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.catch_comments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.activities ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies for profiles
+CREATE POLICY "Public profiles are viewable by everyone"
+    ON public.profiles FOR SELECT
+    USING (is_public = true OR auth.uid() = id);
+
+CREATE POLICY "Users can update own profile"
+    ON public.profiles FOR UPDATE
+    USING (auth.uid() = id);
+
+CREATE POLICY "Users can insert own profile"
+    ON public.profiles FOR INSERT
+    WITH CHECK (auth.uid() = id);
+
+-- RLS Policies for friendships
+CREATE POLICY "Users can view own friendships"
+    ON public.friendships FOR SELECT
+    USING (auth.uid() = user_id OR auth.uid() = friend_id);
+
+CREATE POLICY "Users can create friendships"
+    ON public.friendships FOR INSERT
+    WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own friendship requests"
+    ON public.friendships FOR UPDATE
+    USING (auth.uid() = user_id OR auth.uid() = friend_id);
+
+-- RLS Policies for catch_likes
+CREATE POLICY "Everyone can view likes"
+    ON public.catch_likes FOR SELECT
+    USING (true);
+
+CREATE POLICY "Users can like catches"
+    ON public.catch_likes FOR INSERT
+    WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own likes"
+    ON public.catch_likes FOR DELETE
+    USING (auth.uid() = user_id);
+
+-- RLS Policies for catch_comments
+CREATE POLICY "Everyone can view comments on public catches"
+    ON public.catch_comments FOR SELECT
+    USING (
+        EXISTS (
+            SELECT 1 FROM public.catches
+            WHERE catches.id = catch_comments.catch_id
+            AND (catches.is_public = true OR catches.user_id = auth.uid())
+        )
+    );
+
+CREATE POLICY "Users can comment on public catches"
+    ON public.catch_comments FOR INSERT
+    WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own comments"
+    ON public.catch_comments FOR UPDATE
+    USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own comments"
+    ON public.catch_comments FOR DELETE
+    USING (auth.uid() = user_id);
+
+-- RLS Policies for activities
+CREATE POLICY "Users can view activities from friends and own"
+    ON public.activities FOR SELECT
+    USING (
+        auth.uid() = user_id OR
+        EXISTS (
+            SELECT 1 FROM public.friendships
+            WHERE (friendships.user_id = auth.uid() AND friendships.friend_id = activities.user_id)
+            OR (friendships.friend_id = auth.uid() AND friendships.user_id = activities.user_id)
+            AND friendships.status = 'accepted'
+        )
+    );
+
+-- Update catches policy to allow viewing public catches
+DROP POLICY IF EXISTS "Users can view own catches" ON public.catches;
+
+CREATE POLICY "Users can view own and public catches"
+    ON public.catches FOR SELECT
+    USING (
+        auth.uid() = user_id OR
+        is_public = true OR
+        EXISTS (
+            SELECT 1 FROM public.friendships
+            WHERE (friendships.user_id = auth.uid() AND friendships.friend_id = catches.user_id)
+            OR (friendships.friend_id = auth.uid() AND friendships.user_id = catches.user_id)
+            AND friendships.status = 'accepted'
+        )
+    );
+
+-- Trigger to update likes_count
+CREATE OR REPLACE FUNCTION update_likes_count()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        UPDATE public.catches
+        SET likes_count = likes_count + 1
+        WHERE id = NEW.catch_id;
+        RETURN NEW;
+    ELSIF TG_OP = 'DELETE' THEN
+        UPDATE public.catches
+        SET likes_count = GREATEST(0, likes_count - 1)
+        WHERE id = OLD.catch_id;
+        RETURN OLD;
+    END IF;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS catch_likes_count_trigger ON public.catch_likes;
+CREATE TRIGGER catch_likes_count_trigger
+    AFTER INSERT OR DELETE ON public.catch_likes
+    FOR EACH ROW
+    EXECUTE FUNCTION update_likes_count();
+
+-- Trigger to update comments_count
+CREATE OR REPLACE FUNCTION update_comments_count()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        UPDATE public.catches
+        SET comments_count = comments_count + 1
+        WHERE id = NEW.catch_id;
+        RETURN NEW;
+    ELSIF TG_OP = 'DELETE' THEN
+        UPDATE public.catches
+        SET comments_count = GREATEST(0, comments_count - 1)
+        WHERE id = OLD.catch_id;
+        RETURN OLD;
+    END IF;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS catch_comments_count_trigger ON public.catch_comments;
+CREATE TRIGGER catch_comments_count_trigger
+    AFTER INSERT OR DELETE ON public.catch_comments
+    FOR EACH ROW
+    EXECUTE FUNCTION update_comments_count();
+
+-- Function to create activity on new catch
+CREATE OR REPLACE FUNCTION create_catch_activity()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.is_public = true THEN
+        INSERT INTO public.activities (user_id, activity_type, catch_id)
+        VALUES (NEW.user_id, 'catch', NEW.id);
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS new_catch_activity_trigger ON public.catches;
+CREATE TRIGGER new_catch_activity_trigger
+    AFTER INSERT ON public.catches
+    FOR EACH ROW
+    EXECUTE FUNCTION create_catch_activity();
