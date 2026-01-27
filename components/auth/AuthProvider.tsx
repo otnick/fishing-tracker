@@ -9,11 +9,10 @@ interface AuthProviderProps {
 }
 
 export default function AuthProvider({ children }: AuthProviderProps) {
-  const setUser = useCatchStore((state) => state.setUser)
-
   useEffect(() => {
     // Check active session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      const setUser = useCatchStore.getState().setUser
       setUser(session?.user ?? null)
     })
 
@@ -21,11 +20,12 @@ export default function AuthProvider({ children }: AuthProviderProps) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      const setUser = useCatchStore.getState().setUser
       setUser(session?.user ?? null)
     })
 
     return () => subscription.unsubscribe()
-  }, [setUser])
+  }, [])
 
   return <>{children}</>
 }

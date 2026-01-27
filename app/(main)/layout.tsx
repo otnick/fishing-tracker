@@ -1,27 +1,28 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
-import Auth from '@/components/auth/Auth'
+import MainLayout from '@/components/layout/MainLayout'
 import { useCatchStore } from '@/lib/store'
 
-export default function Home() {
+export default function AppLayout({ children }: { children: ReactNode }) {
   const user = useCatchStore((state) => state.user)
   const router = useRouter()
 
   useEffect(() => {
-    if (user) {
-      router.push('/dashboard')
+    // Redirect to home if not logged in
+    if (user === null) {
+      router.push('/')
     }
   }, [user, router])
 
-  if (user) {
+  if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-ocean-deeper to-ocean-dark flex items-center justify-center">
-        <div className="text-white text-2xl">Weiterleitung...</div>
+        <div className="text-white text-2xl">Laden...</div>
       </div>
     )
   }
 
-  return <Auth onSuccess={() => router.push('/dashboard')} />
+  return <MainLayout>{children}</MainLayout>
 }

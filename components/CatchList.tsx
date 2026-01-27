@@ -1,15 +1,20 @@
 'use client'
 
 import { useState, lazy, Suspense } from 'react'
-import { useCatchStore } from '@/lib/store'
+import { useCatchStore, type Catch } from '@/lib/store'
 import { format } from 'date-fns'
 import { de } from 'date-fns/locale'
 
 // Lazy load Map component (only when needed)
 const Map = lazy(() => import('./Map'))
 
-export default function CatchList() {
-  const catches = useCatchStore((state) => state.catches)
+interface CatchListProps {
+  catches?: Catch[]
+}
+
+export default function CatchList({ catches: propCatches }: CatchListProps = {}) {
+  const storeCatches = useCatchStore((state) => state.catches)
+  const catches = propCatches || storeCatches
   const deleteCatch = useCatchStore((state) => state.deleteCatch)
   const [lightboxPhoto, setLightboxPhoto] = useState<string | null>(null)
   const [expandedMapId, setExpandedMapId] = useState<string | null>(null)

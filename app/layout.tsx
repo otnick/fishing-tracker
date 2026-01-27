@@ -6,7 +6,7 @@ import AuthProvider from '@/components/auth/AuthProvider'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'FishBox - Angel-Tracker',
+  title: 'FishBox - Dein Angel-Tracker',
   description: 'Tracke deine Angelfänge mit 3D-Visualisierung',
 }
 
