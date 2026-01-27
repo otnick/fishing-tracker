@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FishBox - Quick Start Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #0f2333 0%, #2c5f8d 100%);
+            color: #fff;
+            padding: 40px 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        h1 {
+            font-size: 4rem;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.5rem;
+            color: #4a90e2;
+        }
+        
+        .section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        
+        h2 {
+            color: #4a90e2;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .step {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #4a90e2;
+        }
+        
+        .step h3 {
+            margin-bottom: 10px;
+            color: #fff;
+        }
+        
+        code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            color: #4a90e2;
+        }
+        
+        .code-block {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        
+        .code-block code {
+            background: none;
+            color: #a5d6ff;
+            padding: 0;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .feature-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .feature-list li:before {
+            content: "✅ ";
+            margin-right: 10px;
+        }
+        
+        .tech-badge {
+            display: inline-block;
+            background: rgba(74, 144, 226, 0.2);
+            color: #4a90e2;
+            padding: 5px 15px;
+            border-radius: 20px;
+            margin: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .warning {
+            background: rgba(255, 193, 7, 0.1);
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        
+        .success {
+            background: rgba(76, 175, 80, 0.1);
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        
+        a {
+            color: #4a90e2;
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        .button {
+            display: inline-block;
+            background: #4a90e2;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            margin: 10px 5px;
+            transition: background 0.3s;
+        }
+        
+        .button:hover {
+            background: #357abd;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎣 FishBox</h1>
+            <p class="subtitle">Dein Angel-Tracker mit 3D-Visualisierung</p>
+        </header>
+
+        <div class="section">
+            <h2>🚀 Quick Start - In 3 Schritten</h2>
+            
+            <div class="step">
+                <h3>1. Installieren</h3>
+                <div class="code-block">
+                    <code>cd fishing-tracker<br>npm install<br>npm run dev</code>
+                </div>
+                <p>Die App läuft dann auf <a href="http://localhost:3000" target="_blank">http://localhost:3000</a></p>
+            </div>
+
+            <div class="step">
+                <h3>2. Ersten Fang hinzufügen</h3>
+                <p>Klicke auf "+ Neuer Fang", fülle das Formular aus und sieh deinen Fisch im 3D-Aquarium schwimmen!</p>
+            </div>
+
+            <div class="step">
+                <h3>3. Deine Meshes einbauen</h3>
+                <p>Lege deine <code>.glb</code> Dateien in <code>public/models/</code> ab und passe <code>components/Fish.tsx</code> an.</p>
+                <p>Siehe <code>SETUP.md</code> für Details!</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>✨ Was ist schon drin?</h2>
+            
+            <div class="grid">
+                <div class="card">
+                    <div class="card-icon">🎮</div>
+                    <h3>3D-Aquarium</h3>
+                    <p>Interactive 3D-Szene mit Three.js, wo deine Fische schwimmen</p>
+                </div>
+                
+                <div class="card">
+                    <div class="card-icon">📝</div>
+                    <h3>Fang-Tracking</h3>
+                    <p>Vollständiges Formular für Art, Größe, Gewicht, Ort & mehr</p>
+                </div>
+                
+                <div class="card">
+                    <div class="card-icon">📊</div>
+                    <h3>Statistiken</h3>
+                    <p>Gesamt-Fänge, größter Fang, verschiedene Arten</p>
+                </div>
+                
+                <div class="card">
+                    <div class="card-icon">💾</div>
+                    <h3>Lokaler Speicher</h3>
+                    <p>Daten bleiben erhalten beim Reload</p>
+                </div>
+            </div>
+
+            <ul class="feature-list">
+                <li>Animierte Fische mit Schwimm-Bewegung</li>
+                <li>Orbit Controls (Zoom, Rotate, Pan)</li>
+                <li>Responsive Design (Mobile & Desktop)</li>
+                <li>Ocean-Theme mit Custom Colors</li>
+                <li>TypeScript für Type Safety</li>
+                <li>Supabase-ready für Cloud-Sync</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>🛠️ Tech Stack</h2>
+            <div style="text-align: center; margin: 20px 0;">
+                <span class="tech-badge">Next.js 15</span>
+                <span class="tech-badge">React 19</span>
+                <span class="tech-badge">TypeScript</span>
+                <span class="tech-badge">Tailwind CSS</span>
+                <span class="tech-badge">Three.js</span>
+                <span class="tech-badge">React Three Fiber</span>
+                <span class="tech-badge">Zustand</span>
+                <span class="tech-badge">Supabase</span>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📁 Wichtige Dateien</h2>
+            
+            <div class="grid">
+                <div>
+                    <h3>Core</h3>
+                    <ul class="feature-list" style="font-size: 0.9rem;">
+                        <li><code>app/page.tsx</code> - Hauptseite</li>
+                        <li><code>components/FishAquarium.tsx</code> - 3D Szene</li>
+                        <li><code>components/Fish.tsx</code> - Einzelner Fisch</li>
+                        <li><code>lib/store.ts</code> - State Management</li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3>Dokumentation</h3>
+                    <ul class="feature-list" style="font-size: 0.9rem;">
+                        <li><code>README.md</code> - Hauptdoku</li>
+                        <li><code>SETUP.md</code> - Setup-Anleitung</li>
+                        <li><code>PROJECT_OVERVIEW.md</code> - Übersicht</li>
+                        <li><code>public/models/README.md</code> - Mesh-Guide</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🎯 Nächste Schritte</h2>
+            
+            <div class="success">
+                <strong>Sofort möglich:</strong>
+                <ul style="margin-top: 10px;">
+                    <li>✅ App testen und Fänge hinzufügen</li>
+                    <li>✅ Deine 3D-Modelle einbauen</li>
+                    <li>✅ Farben & Design anpassen</li>
+                    <li>✅ Mit Freunden teilen</li>
+                </ul>
+            </div>
+
+            <div class="warning">
+                <strong>Optional (wenn du Cloud-Sync willst):</strong>
+                <ul style="margin-top: 10px;">
+                    <li>📦 Supabase Account erstellen</li>
+                    <li>📦 Datenbank Schema ausführen</li>
+                    <li>📦 Environment Variables setzen</li>
+                </ul>
+                <p style="margin-top: 10px;">Details in <code>SETUP.md</code>!</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🚢 Deployment</h2>
+            
+            <div class="grid">
+                <div class="card">
+                    <h3>Vercel</h3>
+                    <div class="code-block">
+                        <code>npm i -g vercel<br>vercel</code>
+                    </div>
+                    <p>Empfohlen für Next.js</p>
+                </div>
+                
+                <div class="card">
+                    <h3>Mobile App</h3>
+                    <div class="code-block">
+                        <code>npx cap init<br>npx cap add ios<br>npx cap add android</code>
+                    </div>
+                    <p>Mit Capacitor später</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>💡 Feature-Ideen</h2>
+            
+            <div class="grid">
+                <div>
+                    <h3>Einfach (1-3 Tage)</h3>
+                    <ul class="feature-list" style="font-size: 0.9rem;">
+                        <li>Foto-Upload</li>
+                        <li>Export/Import JSON</li>
+                        <li>Suchfunktion</li>
+                        <li>Dark Mode Toggle</li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3>Mittel (1-2 Wochen)</h3>
+                    <ul class="feature-list" style="font-size: 0.9rem;">
+                        <li>GPS-Integration</li>
+                        <li>Wetter-Daten</li>
+                        <li>Karten-View</li>
+                        <li>PWA Setup</li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3>Komplex (1+ Monate)</h3>
+                    <ul class="feature-list" style="font-size: 0.9rem;">
+                        <li>Foto → 3D Model (AI)</li>
+                        <li>Social Features</li>
+                        <li>Rankings</li>
+                        <li>Challenges</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="section" style="text-align: center;">
+            <h2>🎉 Du bist startklar!</h2>
+            <p style="margin: 20px 0;">Alles ist vorbereitet und bereit zum Entwickeln.</p>
+            
+            <a href="README.md" class="button">📖 README lesen</a>
+            <a href="SETUP.md" class="button">🚀 Setup Guide</a>
+            <a href="PROJECT_OVERVIEW.md" class="button">📊 Projekt-Übersicht</a>
+            
+            <p style="margin-top: 40px; color: #4a90e2;">
+                <strong>Viel Erfolg mit FishBox! 🎣</strong>
+            </p>
+        </div>
+    </div>
+</body>
+</html>
