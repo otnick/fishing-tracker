@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS public.catches (
     location TEXT,
     bait TEXT,
     notes TEXT,
-    photo_url TEXT,
+    photo_url TEXT, -- URL to photo in storage
     coordinates JSONB, -- {lat: number, lng: number}
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -28,6 +28,12 @@ CREATE INDEX IF NOT EXISTS catches_species_idx ON public.catches(species);
 
 -- Enable Row Level Security
 ALTER TABLE public.catches ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can view own catches" ON public.catches;
+DROP POLICY IF EXISTS "Users can insert own catches" ON public.catches;
+DROP POLICY IF EXISTS "Users can update own catches" ON public.catches;
+DROP POLICY IF EXISTS "Users can delete own catches" ON public.catches;
 
 -- RLS Policies
 -- Users can only see their own catches
@@ -64,6 +70,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS set_updated_at ON public.catches;
+
 CREATE TRIGGER set_updated_at
     BEFORE UPDATE ON public.catches
     FOR EACH ROW
@@ -73,6 +81,12 @@ CREATE TRIGGER set_updated_at
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('fish-photos', 'fish-photos', true)
 ON CONFLICT (id) DO NOTHING;
+
+-- Drop existing storage policies if they exist
+DROP POLICY IF EXISTS "Users can upload their own photos" ON storage.objects;
+DROP POLICY IF EXISTS "Users can view their own photos" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete their own photos" ON storage.objects;
+DROP POLICY IF EXISTS "Public can view photos" ON storage.objects;
 
 -- Storage policies for fish photos
 CREATE POLICY "Users can upload their own photos"
@@ -90,6 +104,12 @@ CREATE POLICY "Users can view their own photos"
         bucket_id = 'fish-photos' 
         AND auth.uid()::text = (storage.foldername(name))[1]
     );
+
+-- Allow public viewing of photos (for sharing)
+CREATE POLICY "Public can view photos"
+    ON storage.objects
+    FOR SELECT
+    USING (bucket_id = 'fish-photos');
 
 CREATE POLICY "Users can delete their own photos"
     ON storage.objects

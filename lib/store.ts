@@ -70,10 +70,11 @@ export const useCatchStore = create<CatchStore>((set, get) => ({
     if (error) {
       console.error('Error fetching catches:', error)
     } else {
-      // Convert date strings to Date objects
+      // Convert date strings to Date objects and map photo_url to photo
       const catches = data.map(c => ({
         ...c,
         date: new Date(c.date),
+        photo: c.photo_url, // Map photo_url to photo for frontend
       }))
       set({ catches })
     }
@@ -89,7 +90,11 @@ export const useCatchStore = create<CatchStore>((set, get) => ({
       ...catchData,
       date: catchData.date instanceof Date ? catchData.date.toISOString() : catchData.date,
       user_id: user.id,
+      photo_url: catchData.photo, // Map photo to photo_url for database
     }
+
+    // Remove the photo field as it's now photo_url
+    delete (newCatch as any).photo
 
     const { data, error } = await supabase
       .from('catches')
@@ -101,8 +106,14 @@ export const useCatchStore = create<CatchStore>((set, get) => ({
       console.error('Error adding catch:', error)
       alert('Fehler beim Speichern: ' + error.message)
     } else {
+      // Map photo_url back to photo for frontend
+      const catchWithPhoto = {
+        ...data,
+        date: new Date(data.date),
+        photo: data.photo_url,
+      }
       set((state) => ({
-        catches: [{ ...data, date: new Date(data.date) }, ...state.catches],
+        catches: [catchWithPhoto, ...state.catches],
       }))
     }
   },
