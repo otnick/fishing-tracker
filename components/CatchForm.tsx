@@ -87,12 +87,14 @@ export default function CatchForm({ onSuccess }: CatchFormProps) {
       const position = await getCurrentPosition()
       setCoordinates(position)
       
-      const locationName = await getLocationName(position)
-      setFormData(prev => ({ ...prev, location: locationName }))
+      if (position) {
+        const locationName = await getLocationName(position)
+        setFormData(prev => ({ ...prev, location: locationName }))
 
-      // Also fetch weather for this location
-      const weatherData = await getCurrentWeather(position)
-      setWeather(weatherData)
+        // Also fetch weather for this location
+        const weatherData = await getCurrentWeather(position)
+        setWeather(weatherData)
+      }
     } catch (error) {
       console.error('Location error:', error)
       alert('Konnte Standort nicht ermitteln')
