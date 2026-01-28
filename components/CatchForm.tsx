@@ -89,7 +89,7 @@ export default function CatchForm({ onSuccess }: CatchFormProps) {
       
       if (position) {
         const locationName = await getLocationName(position)
-        setFormData(prev => ({ ...prev, location: locationName }))
+        setFormData(prev => ({ ...prev, location: locationName || '' }))
 
         // Also fetch weather for this location
         const weatherData = await getCurrentWeather(position)
