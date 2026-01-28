@@ -1,4 +1,4 @@
-interface NotificationOptions {
+export interface AppNotificationOptions {
   title: string
   body: string
   icon?: string
@@ -22,7 +22,7 @@ class NotificationService {
     return permission === 'granted'
   }
 
-  async send(options: NotificationOptions): Promise<void> {
+  async send(options: AppNotificationOptions): Promise<void> {
     if (this.permission !== 'granted') {
       const granted = await this.requestPermission()
       if (!granted) return
@@ -65,7 +65,13 @@ class NotificationService {
     })
   }
 
-  async newComment(username: string, catchSpecies: string, comment: string, photoUrl?: string, catchId?: string): Promise<void> {
+  async newComment(
+    username: string,
+    catchSpecies: string,
+    comment: string,
+    photoUrl?: string,
+    catchId?: string
+  ): Promise<void> {
     await this.send({
       title: '💬 Neuer Kommentar!',
       body: `${username} zu ${catchSpecies}: "${comment.substring(0, 50)}${comment.length > 50 ? '...' : ''}"`,
@@ -93,7 +99,13 @@ class NotificationService {
     })
   }
 
-  async friendCatch(username: string, species: string, length: number, photoUrl?: string, catchId?: string): Promise<void> {
+  async friendCatch(
+    username: string,
+    species: string,
+    length: number,
+    photoUrl?: string,
+    catchId?: string
+  ): Promise<void> {
     await this.send({
       title: '🎣 Freund hat gefangen!',
       body: `${username} hat einen ${species} (${length}cm) gefangen!`,
