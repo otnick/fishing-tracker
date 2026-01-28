@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { useCatchStore } from '@/lib/store'
 import { format, subDays, isAfter } from 'date-fns'
 import { de } from 'date-fns/locale'
+import { Plus, MapPin, BarChart3, User } from 'lucide-react'
 import FishAquarium from '@/components/FishAquarium'
 
 export default function DashboardPage() {
@@ -137,34 +138,34 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Link
           href="/catches"
-          className="bg-ocean/30 backdrop-blur-sm rounded-lg p-6 hover:bg-ocean/50 transition-colors text-center"
+          className="bg-ocean/30 backdrop-blur-sm rounded-lg p-6 hover:bg-ocean/50 transition-colors text-center group"
         >
-          <div className="text-4xl mb-2">➕</div>
-          <div className="text-white font-semibold">Fang hinzufügen</div>
+          <Plus className="w-12 h-12 mx-auto mb-3 text-ocean-light group-hover:text-white transition-colors" />
+          <div className="text-white font-semibold text-sm sm:text-base">Fang hinzufügen</div>
         </Link>
 
         <Link
           href="/map"
-          className="bg-ocean/30 backdrop-blur-sm rounded-lg p-6 hover:bg-ocean/50 transition-colors text-center"
+          className="bg-ocean/30 backdrop-blur-sm rounded-lg p-6 hover:bg-ocean/50 transition-colors text-center group"
         >
-          <div className="text-4xl mb-2">🗺️</div>
-          <div className="text-white font-semibold">Spots anzeigen</div>
+          <MapPin className="w-12 h-12 mx-auto mb-3 text-ocean-light group-hover:text-white transition-colors" />
+          <div className="text-white font-semibold text-sm sm:text-base">Spots anzeigen</div>
         </Link>
 
         <Link
           href="/stats"
-          className="bg-ocean/30 backdrop-blur-sm rounded-lg p-6 hover:bg-ocean/50 transition-colors text-center"
+          className="bg-ocean/30 backdrop-blur-sm rounded-lg p-6 hover:bg-ocean/50 transition-colors text-center group"
         >
-          <div className="text-4xl mb-2">📊</div>
-          <div className="text-white font-semibold">Statistiken</div>
+          <BarChart3 className="w-12 h-12 mx-auto mb-3 text-ocean-light group-hover:text-white transition-colors" />
+          <div className="text-white font-semibold text-sm sm:text-base">Statistiken</div>
         </Link>
 
         <Link
           href="/profile"
-          className="bg-ocean/30 backdrop-blur-sm rounded-lg p-6 hover:bg-ocean/50 transition-colors text-center"
+          className="bg-ocean/30 backdrop-blur-sm rounded-lg p-6 hover:bg-ocean/50 transition-colors text-center group"
         >
-          <div className="text-4xl mb-2">👤</div>
-          <div className="text-white font-semibold">Profil</div>
+          <User className="w-12 h-12 mx-auto mb-3 text-ocean-light group-hover:text-white transition-colors" />
+          <div className="text-white font-semibold text-sm sm:text-base">Profil</div>
         </Link>
       </div>
     </div>

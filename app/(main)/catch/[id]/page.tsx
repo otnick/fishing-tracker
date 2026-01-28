@@ -8,11 +8,10 @@ import { supabase } from '@/lib/supabase'
 import { useCatchStore } from '@/lib/store'
 import { format } from 'date-fns'
 import { de } from 'date-fns/locale'
-import { Heart, MessageCircle, MapPin, Calendar, Ruler, Scale, Fish as FishIcon, ArrowLeft, Image as ImageIcon } from 'lucide-react'
+import { Heart, MessageCircle, MapPin, Calendar, Ruler, Scale, Fish as FishIcon, ArrowLeft } from 'lucide-react'
 
 const Map = dynamic(() => import('@/components/Map'), { ssr: false })
 const Comments = dynamic(() => import('@/components/Comments'), { ssr: false })
-const PhotoLightbox = dynamic(() => import('@/components/PhotoLightbox'), { ssr: false })
 
 interface CatchDetail {
   id: string
@@ -34,17 +33,8 @@ interface CatchDetail {
   user_has_liked: boolean
 }
 
-interface CatchPhoto {
-  id: string
-  photo_url: string
-  caption?: string
-  order_index: number
-}
-
 export default function CatchDetailPage({ params }: { params: { id: string } }) {
   const [catchData, setCatchData] = useState<CatchDetail | null>(null)
-  const [photos, setPhotos] = useState<CatchPhoto[]>([])
-  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const user = useCatchStore((state) => state.user)
@@ -52,7 +42,6 @@ export default function CatchDetailPage({ params }: { params: { id: string } }) 
   useEffect(() => {
     if (user) {
       fetchCatch()
-      fetchPhotos()
     }
   }, [params.id, user])
 
@@ -112,28 +101,6 @@ export default function CatchDetailPage({ params }: { params: { id: string } }) 
       setError(true)
     } finally {
       setLoading(false)
-    }
-  }
-
-  const fetchPhotos = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('catch_photos')
-        .select('*')
-        .eq('catch_id', params.id)
-        .order('order_index')
-
-      if (error) {
-        console.error('Error fetching photos:', error)
-        return
-      }
-      
-      if (data && data.length > 0) {
-        console.log('Found photos:', data.length)
-        setPhotos(data)
-      }
-    } catch (error) {
-      console.error('Error in fetchPhotos:', error)
     }
   }
 
@@ -200,13 +167,6 @@ export default function CatchDetailPage({ params }: { params: { id: string } }) 
     )
   }
 
-  // Use photos from catch_photos table, fallback to photo_url
-  const displayPhotos = photos.length > 0 
-    ? photos 
-    : (catchData.photo_url ? [{ id: 'main', photo_url: catchData.photo_url, order_index: 0 }] as CatchPhoto[] : [])
-
-  console.log('Display photos:', displayPhotos.length)
-
   return (
     <div className="space-y-6 animate-fade-in pb-20 md:pb-6">
       {/* Back Button */}
@@ -219,38 +179,18 @@ export default function CatchDetailPage({ params }: { params: { id: string } }) 
       </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Photos */}
+        {/* Left Column - Photo & Map */}
         <div className="lg:col-span-2 space-y-4">
-          {/* Photos Grid */}
-          {displayPhotos.length > 0 && (
+          {/* Photo */}
+          {catchData.photo_url && (
             <div className="bg-ocean/30 backdrop-blur-sm rounded-xl p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-white font-semibold flex items-center gap-2">
-                  <ImageIcon className="w-5 h-5 text-ocean-light" />
-                  Fotos ({displayPhotos.length})
-                </h3>
-              </div>
-              <div className={`grid gap-3 ${displayPhotos.length === 1 ? 'grid-cols-1' : 'grid-cols-2 md:grid-cols-3'}`}>
-                {displayPhotos.map((photo, index) => (
-                  <div
-                    key={photo.id}
-                    onClick={() => setSelectedPhotoIndex(index)}
-                    className="relative aspect-square rounded-lg overflow-hidden bg-ocean-dark cursor-pointer group"
-                  >
-                    <Image
-                      src={photo.photo_url}
-                      alt={`Foto ${index + 1}`}
-                      fill
-                      className="object-cover group-hover:scale-110 transition-transform"
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
-                    {photo.caption && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <p className="text-white text-xs">{photo.caption}</p>
-                      </div>
-                    )}
-                  </div>
-                ))}
+              <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-ocean-dark">
+                <Image
+                  src={catchData.photo_url}
+                  alt={catchData.species}
+                  fill
+                  className="object-cover"
+                />
               </div>
             </div>
           )}
@@ -377,20 +317,6 @@ export default function CatchDetailPage({ params }: { params: { id: string } }) 
 
       {/* Comments - Full Width */}
       <Comments catchId={params.id} />
-
-      {/* Lightbox */}
-      {selectedPhotoIndex !== null && displayPhotos.length > 0 && (
-        <PhotoLightbox
-          photos={displayPhotos.map(p => ({
-            id: p.id,
-            url: p.photo_url,
-            species: catchData.species,
-            date: catchData.date,
-          }))}
-          initialIndex={selectedPhotoIndex}
-          onClose={() => setSelectedPhotoIndex(null)}
-        />
-      )}
     </div>
   )
 }

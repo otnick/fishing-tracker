@@ -6,8 +6,6 @@ import { useCatchStore } from '@/lib/store'
 import { uploadPhoto, compressImage } from '@/lib/utils/photoUpload'
 import { getCurrentPosition, getLocationName, formatCoordinates } from '@/lib/utils/geolocation'
 import { getCurrentWeather } from '@/lib/utils/weather'
-import { X, Upload, MapPin, Cloud } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
 import type { Coordinates } from '@/lib/utils/geolocation'
 
 interface CatchFormProps {
@@ -29,12 +27,6 @@ const FISH_SPECIES = [
   'Andere',
 ]
 
-interface PhotoWithPreview {
-  file: File
-  preview: string
-  caption?: string
-}
-
 export default function CatchForm({ onSuccess }: CatchFormProps) {
   const addCatch = useCatchStore((state) => state.addCatch)
   const user = useCatchStore((state) => state.user)
@@ -46,10 +38,11 @@ export default function CatchForm({ onSuccess }: CatchFormProps) {
     location: '',
     bait: '',
     notes: '',
-    date: new Date().toISOString().slice(0, 16), // YYYY-MM-DDTHH:mm format
+    date: new Date().toISOString().slice(0, 16),
   })
 
-  const [photos, setPhotos] = useState<PhotoWithPreview[]>([])
+  const [photo, setPhoto] = useState<File | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [coordinates, setCoordinates] = useState<Coordinates | null>(null)
   const [gettingLocation, setGettingLocation] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -57,28 +50,15 @@ export default function CatchForm({ onSuccess }: CatchFormProps) {
   const [fetchingWeather, setFetchingWeather] = useState(false)
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || [])
-    
-    files.forEach(file => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setPhoto(file)
       const reader = new FileReader()
       reader.onloadend = () => {
-        setPhotos(prev => [...prev, {
-          file,
-          preview: reader.result as string,
-        }])
+        setPhotoPreview(reader.result as string)
       }
       reader.readAsDataURL(file)
-    })
-  }
-
-  const removePhoto = (index: number) => {
-    setPhotos(prev => prev.filter((_, i) => i !== index))
-  }
-
-  const updateCaption = (index: number, caption: string) => {
-    setPhotos(prev => prev.map((photo, i) => 
-      i === index ? { ...photo, caption } : photo
-    ))
+    }
   }
 
   const getLocation = async () => {
@@ -91,7 +71,6 @@ export default function CatchForm({ onSuccess }: CatchFormProps) {
         const locationName = await getLocationName(position)
         setFormData(prev => ({ ...prev, location: locationName || '' }))
 
-        // Also fetch weather for this location
         const weatherData = await getCurrentWeather(position)
         setWeather(weatherData)
       }
@@ -137,17 +116,16 @@ export default function CatchForm({ onSuccess }: CatchFormProps) {
     setUploading(true)
 
     try {
-      // Upload all photos
-      let photoUrls: string[] = []
-      if (photos.length > 0) {
-        for (const photo of photos) {
-          const compressed = await compressImage(photo.file)
-          const url = await uploadPhoto(compressed, user.id)
-          photoUrls.push(url)
+      let photoUrl: string | undefined = undefined
+
+      if (photo) {
+        const compressed = await compressImage(photo)
+        const url = await uploadPhoto(compressed, user.id)
+        if (url) {
+          photoUrl = url
         }
       }
 
-      // Create catch with first photo (backward compatibility)
       const catchData = {
         species: formData.species,
         length: parseInt(formData.length),
@@ -156,33 +134,13 @@ export default function CatchForm({ onSuccess }: CatchFormProps) {
         bait: formData.bait || undefined,
         notes: formData.notes || undefined,
         date: new Date(formData.date).toISOString(),
-        photo: photoUrls[0] || undefined, // First photo
+        photo: photoUrl,
         coordinates: coordinates || undefined,
         weather: weather || undefined,
       }
 
-      const newCatch = await addCatch(catchData)
+      await addCatch(catchData)
 
-      // If multiple photos, save to catch_photos table
-      if (photoUrls.length > 0 && newCatch) {
-        const catchPhotos = photoUrls.map((url, index) => ({
-          catch_id: newCatch.id,
-          photo_url: url,
-          caption: photos[index]?.caption || null,
-          order_index: index,
-        }))
-
-        const { error } = await supabase
-          .from('catch_photos')
-          .insert(catchPhotos)
-
-        if (error) {
-          console.error('Error saving photos:', error)
-          // Don't fail the whole operation, photos are stored in catches.photo_url
-        }
-      }
-
-      // Reset form
       setFormData({
         species: '',
         length: '',
@@ -192,7 +150,8 @@ export default function CatchForm({ onSuccess }: CatchFormProps) {
         notes: '',
         date: new Date().toISOString().slice(0, 16),
       })
-      setPhotos([])
+      setPhoto(null)
+      setPhotoPreview(null)
       setCoordinates(null)
       setWeather(null)
 
@@ -207,66 +166,44 @@ export default function CatchForm({ onSuccess }: CatchFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Photo Upload - Multiple */}
+      {/* Photo Upload */}
       <div>
         <label className="block text-ocean-light text-sm mb-2">
-          Fotos ({photos.length})
+          Foto
         </label>
-        
-        {/* Photo Grid */}
-        {photos.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-            {photos.map((photo, index) => (
-              <div key={index} className="relative group">
-                <div className="relative aspect-square rounded-lg overflow-hidden bg-ocean-dark">
-                  <Image
-                    src={photo.preview}
-                    alt={`Photo ${index + 1}`}
-                    fill
-                    className="object-cover"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removePhoto(index)}
-                    className="absolute top-2 right-2 p-1 bg-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X className="w-4 h-4 text-white" />
-                  </button>
-                  {index === 0 && (
-                    <div className="absolute top-2 left-2 bg-ocean-light px-2 py-1 rounded text-white text-xs">
-                      Hauptfoto
-                    </div>
-                  )}
-                </div>
-                <input
-                  type="text"
-                  placeholder="Beschreibung (optional)"
-                  value={photo.caption || ''}
-                  onChange={(e) => updateCaption(index, e.target.value)}
-                  className="mt-2 w-full px-3 py-1 rounded bg-ocean-dark text-white text-sm border border-ocean-light/30 focus:border-ocean-light focus:outline-none"
-                />
-              </div>
-            ))}
+        {photoPreview ? (
+          <div className="relative w-full h-48 rounded-lg overflow-hidden mb-2">
+            <Image
+              src={photoPreview}
+              alt="Preview"
+              fill
+              className="object-cover"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                setPhoto(null)
+                setPhotoPreview(null)
+              }}
+              className="absolute top-2 right-2 bg-red-500 text-white px-3 py-1 rounded-lg text-sm"
+            >
+              Entfernen
+            </button>
           </div>
+        ) : (
+          <label className="flex items-center justify-center w-full h-48 border-2 border-dashed border-ocean-light/30 rounded-lg cursor-pointer hover:border-ocean-light transition-colors">
+            <div className="text-center">
+              <div className="text-4xl mb-2">📷</div>
+              <div className="text-ocean-light">Foto hochladen</div>
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoChange}
+              className="hidden"
+            />
+          </label>
         )}
-
-        {/* Upload Button */}
-        <label className="flex items-center justify-center gap-2 px-4 py-3 bg-ocean/30 hover:bg-ocean/50 rounded-lg cursor-pointer transition-colors border-2 border-dashed border-ocean-light/30">
-          <Upload className="w-5 h-5 text-ocean-light" />
-          <span className="text-ocean-light">
-            {photos.length === 0 ? 'Fotos hochladen' : 'Weitere Fotos hinzufügen'}
-          </span>
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handlePhotoChange}
-            className="hidden"
-          />
-        </label>
-        <p className="text-xs text-ocean-light mt-1">
-          Mehrere Fotos auswählen. Erstes Foto = Hauptfoto
-        </p>
       </div>
 
       {/* Species */}
@@ -329,9 +266,6 @@ export default function CatchForm({ onSuccess }: CatchFormProps) {
           onChange={(e) => setFormData({ ...formData, date: e.target.value })}
           className="w-full px-4 py-2 rounded-lg bg-ocean-dark text-white border border-ocean-light/30 focus:border-ocean-light focus:outline-none"
         />
-        <p className="text-xs text-ocean-light mt-1">
-          Standardmäßig aktuelle Zeit - anpassbar
-        </p>
       </div>
 
       {/* Location */}
@@ -351,10 +285,9 @@ export default function CatchForm({ onSuccess }: CatchFormProps) {
             type="button"
             onClick={getLocation}
             disabled={gettingLocation}
-            className="px-4 py-2 bg-ocean hover:bg-ocean-light text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+            className="px-4 py-2 bg-ocean hover:bg-ocean-light text-white rounded-lg transition-colors disabled:opacity-50"
           >
-            <MapPin className="w-4 h-4" />
-            {gettingLocation ? '...' : 'GPS'}
+            {gettingLocation ? '...' : '📍'}
           </button>
         </div>
         {coordinates && (
@@ -371,12 +304,9 @@ export default function CatchForm({ onSuccess }: CatchFormProps) {
             type="button"
             onClick={getWeatherData}
             disabled={fetchingWeather}
-            className="flex items-center gap-2 text-ocean-light hover:text-white transition-colors"
+            className="text-ocean-light hover:text-white text-sm transition-colors"
           >
-            <Cloud className="w-4 h-4" />
-            <span className="text-sm">
-              {weather ? 'Wetter aktualisieren' : 'Wetter laden'}
-            </span>
+            {weather ? '☁️ Wetter aktualisieren' : '☁️ Wetter laden'}
           </button>
           {weather && (
             <div className="mt-2 p-3 bg-ocean-dark/50 rounded-lg text-sm">
